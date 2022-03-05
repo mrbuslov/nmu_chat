@@ -47,6 +47,8 @@ INSTALLED_APPS = [
     'chat', # https://www.youtube.com/watch?v=F4nwRQPXD8w&ab_channel=VeryAcademy
     'channels',
     'account',
+
+    'django_extensions',
     'django_cleanup.apps.CleanupConfig',
 ]
 
@@ -176,3 +178,10 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.environ['EMAIL_HOST_USER']
 EMAIL_HOST_PASSWORD = os.environ['EMAIL_HOST_PASSWORD']
+
+
+# чтобы делать er-диаграммы
+GRAPH_MODELS = {
+    'all_applications': True,
+    'group_models': True,
+}

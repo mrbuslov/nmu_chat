@@ -3,12 +3,13 @@ import uuid
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.db.models import Q
-from matplotlib.style import context
+# from matplotlib.style import context
 from django.core import serializers
 import json
 from django.http import HttpResponse
+from telegram import Chat
 
-from pytest import console_main
+# from pytest import console_main
 
 from account.models import Account
 from chat.models import Message, Room, File
@@ -53,19 +54,20 @@ def room(request):
             room_name = str(uuid.uuid4()).replace('-','')
             Room.objects.create(name=room_name, participant_1=participant, participant_2=request.user)
 
-        # context = {
-        #     'room_name': room_name, 
-        #     'messages': Message.objects.filter(room=Room.objects.get(name=room_name))
-        #     }
-        # return render(request, 'chatroom.html', context)
 
+        ids = [] # для списка id сообщений
         if Message.objects.filter(room=Room.objects.get(name=room_name)).exists():
             msg_obj = Message.objects.filter(room=Room.objects.get(name=room_name))
+
+            for obj in msg_obj:
+                ids.append(obj.id)
+
             msg_obj_json=serializers.serialize('json',msg_obj)
         else:
             msg_obj_json = serializers.serialize('json',{})
         return JsonResponse(data={
             'posts':msg_obj_json,
+            'ids': ids,
         })
 
 
@@ -82,7 +84,8 @@ def get_room(request):
         else:
             room = str(uuid.uuid4()).replace('-','')
             Room.objects.create(name=room, participant_1=participant, participant_2=request.user)
-
+        print(participant.email)
+        print(participant.last_online)
         return JsonResponse(data={
             'room':room,
             'sender':request.user.email,
@@ -122,7 +125,9 @@ def get_last_msg(request):
             last_msg = last_msg.value.replace('\\n','').replace('\n','')
         else:
             last_msg = '...'
-        return JsonResponse(last_msg, safe=False)
+
+        
+        return JsonResponse(last_msg, safe=False, json_dumps_params={'ensure_ascii': False}) # кодировка для кириллицы
 
 
     
@@ -199,4 +204,33 @@ def upload_file_to_chat(request):
         files_list = serializers.serialize('json',files_list)
         return JsonResponse(data={
             'files':files_list,
+        })
+
+
+def chat_delete(request):
+    if request.method == 'POST' and request.is_ajax():
+        user_chat_delete = Account.objects.get(email = request.POST.get('user_chat_delete', None)).id
+
+        if Room.objects.filter(participant_1 = user_chat_delete).exists() or Room.objects.filter(participant_2 = user_chat_delete).exists():
+            if Room.objects.filter(Q(participant_1 = user_chat_delete),Q(participant_2 = request.user)).exists():
+                Room.objects.get(Q(participant_1 = user_chat_delete),Q(participant_2 = request.user)).delete()
+            elif Room.objects.filter(Q(participant_2 = user_chat_delete),Q(participant_1 = request.user)).exists():
+                Room.objects.get(Q(participant_2 = user_chat_delete),Q(participant_1 = request.user)).delete()
+
+        return HttpResponse('ok')
+
+
+def msg_action(request):
+    if request.method == 'POST' and request.is_ajax():
+        message_id = request.POST.get('message_id', None)
+        action = request.POST.get('action', None)
+        msg_content = request.POST.get('msg_content', None)
+
+        if action == 'delete':
+            Message.objects.get(id=message_id).delete()
+        elif action == 'edit':
+            Message.objects.filter(id=message_id).update(value=msg_content)
+
+        return JsonResponse(data={
+            'text':msg_content,
         })

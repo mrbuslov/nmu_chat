@@ -257,22 +257,24 @@ $(document).ready(function() {
     });
 //// -----------------------------Присоединение к комнате и отправка сообщения------------------------------------ -->
     var roomName = $(this).text();
-    var sender_email = ''
+    var sender_email = '';
+    var receiver = '';
 
     var time_options = {         ////// для нормального отображения времени
         hour: 'numeric',
         minute: 'numeric',
-        timezone: 'UTC',
+        timezone: 'Europe/Simferopol',
     };
     var day_options = {         ////// для нормального отображения даты
         month: 'long',
         day: 'numeric',
-        timezone: 'UTC',
+        timezone: 'Europe/Simferopol',
     };
 
     $(document).on("click", ".user_cover", function(e){
         $('.send_msg_forms').css('display', 'flex');
-        var user = $(this).find( "input" ).val();
+        user = $(this).find( "input" ).val();
+        receiver = user;
         $('.user_cover').css('background', 'initial')
         $(this).css('background', '#fff')
         if(chatSocket){
@@ -311,11 +313,11 @@ $(document).ready(function() {
                         online = 'был(а) давно';
                     }
                     else{
-                        
                         var now = new Date().toLocaleString("ru", day_options);
 
                         last_online_time = new Date(res.last_online).toLocaleString("ru", time_options); 
                         last_online_date = new Date(res.last_online).toLocaleString("ru", day_options); 
+                        
                         if(parseInt(last_online_date) === parseInt(now)){
                             online = 'был(а) в ' + last_online_time;
                         }
@@ -348,6 +350,19 @@ $(document).ready(function() {
                     'roomName': roomName,
                 }));
                 messageInputDom.value = '';
+                $.each($('.chat_info'),function(){
+                    if($(this).children('input').val() === receiver) {// обновляем сообщение в левой части экрана
+                        if(message.includes('class=\"chat_img\"')){
+                            $(this).children('span').text('<i>Изображение</i>');
+                        }
+                        else if(message.includes('class=\"file_chat_img\"')){
+                            $(this).children('span').text('<i>Файл</i>');
+                        }
+                        else{
+                            $(this).children('span').text(message);
+                        }
+                    }
+                })
             }
         };
         
@@ -393,7 +408,11 @@ $(document).ready(function() {
     $("#input").keypress(function (e) {
         if(e.which === 13 && !e.shiftKey) {
             e.preventDefault();
-            document.querySelector('#submit').onclick();
+            if($('#submit').css('display') === 'none'){
+                $('#edit_btn').click();
+            }else{
+                document.querySelector('#submit').onclick();
+            }
         }
     });
 
@@ -447,7 +466,13 @@ $(document).ready(function() {
     {
         var data = JSON.parse(data);
         if(data['data'].length === 0){
-            document.getElementById('chats').innerHTML = "<p style='font-weight: normal;'>Мы не смогли ничего найти( </p>";
+            var user_to_invite = $('#search_user').val();
+            if (user_to_invite.includes('@')){
+                document.getElementById('chats').innerHTML = "<p style='font-weight: normal;text-align:center; margin-top:20px; white-space: break-spaces;'>Мы не смогли найти пользователя "+user_to_invite+" </p> <p style='font-weight: normal;text-align:center; margin-top:20px;'><a style='color:#000;' href='mailto:"+user_to_invite+"&body=Здравствуйте! Давайте будем общаться в nmu Chat!'>Пригласить в nmu Chat</a></p>";
+            }
+            else{
+                document.getElementById('chats').innerHTML = "<p style='font-weight: normal; text-align:center; margin-top:20px;'>Мы не смогли ничего найти( </p>";
+            }
         }
         else{
             res = data
@@ -555,6 +580,7 @@ $(document).ready(function() {
                     var days = []; // для того, чтобы писать новый день новых сообщений
                     
                     var json_data=$.parseJSON(res.posts);
+                    var messages_ids=res.ids;
                     $.each(json_data,function(index,data){
                         var options = {
                             timezone: 'UTC',
@@ -585,12 +611,13 @@ $(document).ready(function() {
                         else{
                             message_from = 'left';
                         }
-
+                        
                         _html+= day +
                         '<div class="msg ' + message_from + '">'+
                             '<div class="msg_area">'+
                                 '<div class="msg_text">' + data.fields.value + '</div>'+
                                 '<div class="msg_time">' + published_time + '</div>'+
+                                '<input type="hidden" value="'+messages_ids[index]+'">'+
                             '</div>'+
                         '</div>';
                     });
@@ -603,3 +630,143 @@ $(document).ready(function() {
         });
     
     });
+
+
+   // <!-- -------------------------------------- Изменение выпадающего меню после нажатия правой клавиши --------------------------------------------- -->
+   var user_chat_delete = '';
+   var this_chat_div = ''; // чтобы можно было при ajax-запросе убрать
+   var edited_msg;
+     
+   // Клик правой клавишей мыши на чат
+     $(function() {
+       $.contextMenu({
+         selector: '.user_cover', 
+         callback: function(key, options) {
+           var m = "cliiiicked: " + key;
+           // window.console && console.log(m); 
+           // console.log(options);
+           user_chat_delete = $(this).find('input').val();
+           this_chat_div = $(this);
+           $('.delete_chat_bg').css('display', 'flex');
+           $('.delete_chat_window').css('display', 'block');
+         },
+         items: {
+             "delete": {name: "Удалить чат", icon: "delete"},
+         }
+       });
+     });
+
+
+     function message_action(message_id, action, this_msg_DOM, msg_content){
+       $.ajax({
+           url:"/msg_action/",
+           headers: { "X-CSRFToken": getCookie("csrftoken") },
+           type:'post',
+           data:{
+             'message_id':message_id,
+             'action':action,
+             'msg_content':msg_content,
+           },
+           success:function(data){
+             if(action === 'delete'){
+               this_msg_DOM.css('display', 'none'); // скрываем удалённое сообщение
+             }
+             else if(action === 'edit'){
+               this_msg_DOM.find('.msg_text').text(data.text);
+               $('#input').val('');
+             }
+           },
+           error:function(){
+             alert('Попробуйте ещё раз');
+           }
+       });
+
+       $('.delete_chat_bg').css('display', 'none');
+       $('.delete_chat_window').css('display', 'none');
+     }
+
+     // Клик правой клавишей мыши на сообщение
+     $(function() {
+       $.contextMenu({
+         selector: '.msg', 
+         callback: function(key, options) {
+           var action = '';
+           var message_id = $(this).find('input').val()
+
+           if( key === 'edit'){
+             action = 'edit';
+             $('#submit').css('display', 'none');
+             $('#edit_btn').css('display', 'inline-block');
+             $('.change_msg_field').css('display', 'block');
+             $('.change_msg_field span').text($(this).find('.msg_text').text());
+             $('.change_msg_field input').val($(this).find('input').val());
+             $('#input').text($(this).find('.msg_text').text());
+             $('#input').focus();
+             edited_msg = $(this);
+           }
+           else if(key === 'copy'){
+             var copyText = $(this).find('.msg_text').text();
+             navigator.clipboard.writeText(copyText);
+           }
+           else if(key === 'delete'){
+             action = 'delete';
+             message_action(message_id, action, $(this), '');
+           }
+         },
+         items: {
+           "edit": {name: "Изменить", icon: "edit"},
+           copy: {name: "Скопировать", icon: "copy"},
+           "delete": {name: "Удалить", icon: "delete"},
+         }
+       });
+     });
+
+
+
+   $(document).ready(function () {
+     $('.delete_chat_bg').click(function() {
+       $(this).css('display', 'none');
+       $('.delete_chat_window').css('display', 'none');
+     });
+
+     $('.delete_chat_btn').click(function() {
+       $.ajax({
+               url:"/chat_delete/",
+               headers: { "X-CSRFToken": getCookie("csrftoken") },
+               type:'post',
+               data:{
+                 'user_chat_delete':user_chat_delete,
+               },
+               success:function(){
+                 this_chat_div.css('display', 'none'); // скрываем удалённый чат
+               },
+               error:function(){
+                 alert('Попробуйте ещё раз')
+               }
+           });
+
+       $('.delete_chat_bg').css('display', 'none');
+       $('.delete_chat_window').css('display', 'none');
+     });
+
+
+
+
+     function close_edit_msg(){
+       $('.change_msg_field').css('display', 'none');
+       $('#input').text('');
+       
+       $('#submit').css('display', 'inline-block');
+       $('#edit_btn').css('display', 'none');
+     };
+     $('.close_edit_msg').click(function() {
+       close_edit_msg();
+     });
+
+     $('#edit_btn').click(function(){
+       close_edit_msg();
+       if($('#input').val() !== '' && $('#input').val() !== ' '){
+         message_action($('.change_msg_field').find('input').val(), 'edit', edited_msg, $('#input').val());
+       }
+     });
+     });

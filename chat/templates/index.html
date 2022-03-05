@@ -6,10 +6,25 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>nmu Chat</title>
+    
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+    <link href="https://swisnl.github.io/jQuery-contextMenu/dist/jquery.contextMenu.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <script src="https://swisnl.github.io/jQuery-contextMenu/dist/jquery.contextMenu.js" type="text/javascript"></script>
+    <script src="https://swisnl.github.io/jQuery-contextMenu/dist/jquery.ui.position.min.js" type="text/javascript"></script>
+
 
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 <body>
+
+<div class="delete_chat_bg"></div>
+<div class="delete_chat_window">
+  <p>Вы действительно хотите удалить чат? <br> Восстановить его будет невозможно</p>
+  <span class="delete_chat_btn">Удалить</span>
+</div>
+
 
 <div class="chats_container">
 
@@ -65,36 +80,20 @@
     </header>
   
     <main class="main_chat">
-        <div id="text_area">
-            <div class="greeting">
-                <h1>Давайте начнём разговор!</h1>
-                <h3>Нужные люди рядом</h2>
-                    <!-- <div id="test1">
-                        <a href="www.google.com" class="test">Google</a>
-                        <a href="www.google.com" class="test">Link 2</a>
-                        <a href="www.google.com" class="test">Link 3</a>
-                        <a href="www.google.com" class="test">Link 4</a>
-                      </div>
-                      
-                      <div class="hide" id="rmenu">
-                        <ul>
-                          <li>
-                            <a href="http://www.google.com">Google</a>
-                          </li>
-                      
-                          <li>
-                            <a href="http://localhost:8080/login">Localhost</a>
-                          </li>
-                      
-                          <li>
-                            <a href="C:\">C</a>
-                          </li>
-                        </ul>
-                      </div> -->
-            </div>
+      <div id="text_area">
+          <div class="greeting">
+            <h1>Давайте начнём разговор!</h1>
+            <h3>Нужные люди рядом</h2>
+          </div>
       </div>
     </main>
   
+    <div class="change_msg_field">
+      <div class="close_edit_msg">+</div>
+      <p><strong>Изменить сообщение: </strong></p>
+      <span></span>
+      <input type="hidden">
+    </div>
     <div class="send_msg_forms">
         <form method="POST" id="fileForm">
             <div class="files_upload_div">
@@ -109,9 +108,11 @@
             
         <textarea id="input" placeholder="Напишите что-то прекрасное..."></textarea>
         <button type="submit" id="submit">Send</button>
+        <span id="edit_btn" style="padding: 0;"><img src="{% static 'img/edit_icon.svg' %}" alt="" style="padding: 0; width: 40px;"></span>
         </form>
     </div>
   </section>
+
 
     <div class="black_back"></div>
     <div class="settings">
@@ -163,101 +164,6 @@
 </body>
 
 
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
 <script src="{% static 'js/script.js' %}"></script>
-
-
-<!-- -------------------------------------- Изменение выпадающего меню после нажатия правой клавиши --------------------------------------------- -->
-<style>
-    .show {
-  z-index: 1000;
-  position: absolute;
-  background-color: #C0C0C0;
-  border: 1px solid blue;
-  padding: 2px;
-  display: block;
-  margin: 0;
-  list-style-type: none;
-  list-style: none;
-}
-
-.hide {
-  display: none;
-}
-
-.show li {
-  list-style: none;
-}
-
-.show a {
-  border: 0 !important;
-  text-decoration: none;
-}
-
-.show a:hover {
-  text-decoration: underline !important;
-}
-</style>
-
-<!-- <script>
-    $(document).ready(function() {
-
-
-if ($("#test").addEventListener) {
-  $("#test").addEventListener('contextmenu', function(e) {
-    alert("You've tried to open context menu"); //here you draw your own menu
-    e.preventDefault();
-  }, false);
-} else {
-
-  //document.getElementById("test").attachEvent('oncontextmenu', function() {
-  //$(".test").bind('contextmenu', function() {
-  $('body').on('contextmenu', 'a.test', function() {
-
-
-    //alert("contextmenu"+event);
-    document.getElementById("rmenu").className = "show";
-    document.getElementById("rmenu").style.top = mouseY(event) + 'px';
-    document.getElementById("rmenu").style.left = mouseX(event) + 'px';
-
-    window.event.returnValue = false;
-
-
-  });
-}
-
-});
-
-// this is from another SO post...  
-$(document).bind("click", function(event) {
-document.getElementById("rmenu").className = "hide";
-});
-
-
-
-function mouseX(evt) {
-  if (evt.pageX) {
-    return evt.pageX;
-  } else if (evt.clientX) {
-    return evt.clientX + (document.documentElement.scrollLeft ?
-      document.documentElement.scrollLeft :
-      document.body.scrollLeft);
-  } else {
-    return null;
-  }
-}
-
-function mouseY(evt) {
-  if (evt.pageY) {
-    return evt.pageY;
-  } else if (evt.clientY) {
-    return evt.clientY + (document.documentElement.scrollTop ?
-      document.documentElement.scrollTop :
-      document.body.scrollTop);
-  } else {
-    return null;
-  }
-}
-</script> -->
 
 </html>

@@ -1,0 +1,1 @@
+python manage.py graph_models --pydot -a -g -o er_diagram.jpg

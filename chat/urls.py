@@ -14,4 +14,6 @@ urlpatterns = [
     path('upload_file_to_chat/', views.upload_file_to_chat, name='upload_file_to_chat'),
     path('update_data/', views.update_data, name='update_data'),
     path('get_settings_data/', views.get_settings_data, name='get_settings_data'),
+    path('chat_delete/', views.chat_delete, name='chat_delete'),
+    path('msg_action/', views.msg_action, name='msg_action'),
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
